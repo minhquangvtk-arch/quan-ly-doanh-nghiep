@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Doanh nghiệp - UBND Phường Xuân Phương</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        doDo: '#800020',
+                        doDoDark: '#5c0017',
+                        doDoLight: '#a31c3f',
+                        vangKim: '#D4AF37',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        .bg-do-do { background-color: #800020; }
+        .text-do-do { color: #800020; }
+        .border-do-do { border-color: #800020; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-do-do text-white shadow-md border-b-4 border-yellow-500 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-yellow-500 text-do-do rounded-full flex items-center justify-center font-bold text-2xl shadow-inner border-2 border-white">
+                    <i class="fas fa-landmark"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold uppercase tracking-wide text-yellow-300">ỦY BAN NHÂN DÂN PHƯỜNG XUÂN PHƯƠNG</h1>
+                    <p class="text-xs md:text-sm text-gray-200">THÀNH PHỐ HÀ NỘI — HỆ THỐNG QUẢN LÝ DOANH NGHIỆP & CƠ SỞ KINH DOANH</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="bg-red-900 bg-opacity-60 px-3 py-1 rounded-full text-xs border border-yellow-500/40 text-yellow-200">
+                    <i class="fas fa-shield-alt mr-1"></i> Cổng thông tin Hành chính
+                </span>
+            </div>
+        </div>
+        
+        <!-- Nav Tabs -->
+        <div class="bg-doDoDark px-4">
+            <div class="max-w-7xl mx-auto flex overflow-x-auto space-x-2">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-3 px-5 text-sm font-semibold border-b-4 border-yellow-400 text-white flex items-center gap-2 transition">
+                    <i class="fas fa-chart-pie text-yellow-400"></i> Trang chủ & Thống kê
+                </button>
+                <button onclick="switchTab('list')" id="tab-list" class="py-3 px-5 text-sm font-semibold border-b-4 border-transparent text-gray-300 hover:text-white flex items-center gap-2 transition">
+                    <i class="fas fa-book-bookmark"></i> Sổ Quản lý Doanh nghiệp
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full no-print">
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="hidden fixed top-5 right-5 z-50 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center space-x-3 border-l-4 border-yellow-400">
+            <i id="toastIcon" class="fas fa-check-circle text-green-400 text-xl"></i>
+            <span id="toastMsg" class="text-sm font-medium">Thông báo</span>
+        </div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="sec-dashboard" class="space-y-6">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-do-do flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tổng Doanh Nghiệp</p>
+                        <h3 id="kpiTotal" class="text-3xl font-extrabold text-do-do mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 text-do-do rounded-full flex items-center justify-center text-xl">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-600 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Đang Hoạt Động</p>
+                        <h3 id="kpiActive" class="text-3xl font-extrabold text-green-700 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xl">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-600 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Cơ quan thuế QL</p>
+                        <h3 class="text-lg font-bold text-blue-900 mt-1 truncate">Chi cục Thuế NT Liêm</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xl">
+                        <i class="fas fa-landmark-flag"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-yellow-500 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Địa bàn quản lý</p>
+                        <h3 class="text-lg font-bold text-gray-800 mt-1">Phường Xuân Phương</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 text-yellow-700 rounded-full flex items-center justify-center text-xl">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <h4 class="font-bold text-do-do text-base border-b pb-2 mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-pie"></i> Cơ cấu Loại hình Doanh nghiệp
+                    </h4>
+                    <div class="relative h-64">
+                        <canvas id="chartType"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 lg:col-span-2">
+                    <h4 class="font-bold text-do-do text-base border-b pb-2 mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-bar"></i> Phân bố Theo Ngành nghề Chính
+                    </h4>
+                    <div class="relative h-64">
+                        <canvas id="chartIndustry"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MANAGEMENT TABLE -->
+        <section id="sec-list" class="hidden space-y-4">
+            
+            <!-- Toolbar & Controls -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    
+                    <!-- Search & Filters -->
+                    <div class="flex flex-wrap items-center gap-2 flex-1">
+                        <div class="relative flex-1 min-w-[200px]">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Tìm theo tên, MST, đại diện, địa chỉ..." 
+                                   class="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-do-do">
+                        </div>
+                        <select id="filterType" onchange="applyFilters()" class="py-2 px-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-do-do">
+                            <option value="">-- Tất cả Loại hình --</option>
+                            <option value="Công ty TNHH">Công ty TNHH</option>
+                            <option value="Công ty Cổ phần">Công ty Cổ phần</option>
+                            <option value="Doanh nghiệp Tư nhân">Doanh nghiệp Tư nhân</option>
+                            <option value="Hợp tác xã">Hợp tác xã</option>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button id="btnBatchDelete" onclick="deleteSelectedBusinesses()" class="hidden bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 shadow-sm transition">
+                            <i class="fas fa-trash-alt"></i> Xóa đã chọn (<span id="selectedCount">0</span>)
+                        </button>
+
+                        <button onclick="openModal()" class="bg-do-do hover:bg-doDoDark text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition">
+                            <i class="fas fa-plus"></i> Thêm Mới
+                        </button>
+                        <button onclick="document.getElementById('excelFileInput').click()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 shadow-sm">
+                            <i class="fas fa-file-import"></i> Nhập Excel
+                        </button>
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="importFromExcel(event)">
+                        
+                        <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 shadow-sm">
+                            <i class="fas fa-file-excel"></i> Xuất Excel (Lọc)
+                        </button>
+                        
+                        <button onclick="printFilteredList()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 shadow-sm">
+                            <i class="fas fa-print"></i> In Danh Sách
+                        </button>
+
+                        <button onclick="downloadExcelTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1">
+                            <i class="fas fa-download"></i> File Mẫu
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-do-do text-white uppercase text-xs">
+                            <tr>
+                                <th class="p-3 text-center w-10">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" title="Chọn tất cả" class="w-4 h-4 cursor-pointer accent-yellow-400">
+                                </th>
+                                <th class="p-3 text-center w-12">STT</th>
+                                <th class="p-3 w-36">Mã Số Thuế</th>
+                                <th class="p-3">Tên Doanh Nghiệp</th>
+                                <th class="p-3">Địa Chỉ Trụ Sở (Nhấp xem Maps)</th>
+                                <th class="p-3 text-center w-28">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessTableBody" class="divide-y divide-gray-200">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyMessage" class="hidden text-center py-10 text-gray-500">
+                    <i class="fas fa-folder-open text-4xl mb-2 text-gray-300"></i>
+                    <p>Không tìm thấy dữ liệu doanh nghiệp phù hợp.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Form Thêm/Sửa -->
+    <div id="formModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden border-t-8 border-do-do my-8">
+            <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-bold text-do-do uppercase flex items-center gap-2">
+                    <i class="fas fa-building"></i> Thêm Doanh Nghiệp Mới
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-red-600 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <form id="businessForm" onsubmit="saveBusiness(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200 space-y-2">
+                    <label class="block text-xs font-bold text-do-do uppercase">Mã Số Thuế (MST) *</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="mst" required placeholder="Nhập mã số thuế..." 
+                               class="flex-1 px-3 py-2 border rounded-lg font-mono font-bold text-gray-800 focus:ring-2 focus:ring-do-do focus:outline-none">
+                        <button type="button" onclick="lookupMSTGoogle()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
+                            <i class="fas fa-search"></i> Tra cứu Google & Auto-Fill
+                        </button>
+                        <button type="button" onclick="openGoogleSearch()" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
+                            <i class="fab fa-google"></i> Mở Google.com
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tên Doanh Nghiệp *</label>
+                        <input type="text" id="tenDN" required placeholder="Công ty TNHH..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Người Đại Diện Pháp Luật *</label>
+                        <input type="text" id="daiDien" required placeholder="Nguyễn Văn A" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Số Điện Thoại</label>
+                        <input type="text" id="sdt" placeholder="0987..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Loại Hình Doanh Nghiệp</label>
+                        <select id="loaiHinh" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                            <option value="Công ty TNHH">Công ty TNHH</option>
+                            <option value="Công ty Cổ phần">Công ty Cổ phần</option>
+                            <option value="Doanh nghiệp Tư nhân">Doanh nghiệp Tư nhân</option>
+                            <option value="Hợp tác xã">Hợp tác xã</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Ngày Cấp / Hoạt Động</label>
+                        <input type="date" id="ngayCap" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Cơ Quan Quản Lý Thuế</label>
+                        <input type="text" id="coQuanThue" value="Chi cục Thuế khu vực Nam Từ Liêm" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Địa Chỉ Trụ Sở (Phường Xuân Phương - TP. Hà Nội) *</label>
+                    <input type="text" id="diaChi" required placeholder="Số 10, Phố Tu Hoàng, Phường Xuân Phương..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Ngành Nghề Kinh Doanh Chính</label>
+                    <input type="text" id="nganhNghe" placeholder="Xây dựng, Thương mại, Xăng dầu..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-do-do focus:outline-none text-sm">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 font-medium">Hủy Bỏ</button>
+                    <button type="submit" class="px-5 py-2 bg-do-do hover:bg-doDoDark text-white rounded-lg text-sm font-bold shadow-md">Lưu Hồ Sơ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Xem Chi Tiết -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden border-t-8 border-do-do my-8">
+            <div class="bg-do-do text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-base font-bold uppercase tracking-wide flex items-center gap-2">
+                    <i class="fas fa-file-contract text-yellow-400"></i> Hồ Sơ Doanh Nghiệp Chi Tiết
+                </h3>
+                <button onclick="closeDetailModal()" class="text-white hover:text-yellow-400 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-4" id="detailContent">
+                <!-- Dynamic Content Details -->
+            </div>
+
+            <div class="bg-gray-100 px-6 py-3 border-t flex justify-between items-center">
+                <button onclick="printSingleBusiness()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
+                    <i class="fas fa-print"></i> In Hồ Sơ A4
+                </button>
+                <button onclick="closeDetailModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-bold">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Area dùng để IN khổ A4 -->
+    <div id="printArea" class="hidden">
+        <div class="text-center space-y-1 mb-6 border-b-2 border-black pb-4">
+            <h3 class="font-bold text-xs uppercase tracking-wider">ỦY BAN NHÂN DÂN PHƯỜNG XUÂN PHƯƠNG — TP. HÀ NỘI</h3>
+            <h2 class="font-extrabold text-lg uppercase tracking-wide text-do-do" id="printTitle">BÁO CÁO DANH SÁCH DOANH NGHIỆP QUẢN LÝ</h2>
+            <p class="text-xs italic text-gray-600"><span id="printDate"></span></p>
+        </div>
+
+        <table class="w-full border-collapse border border-black text-xs">
+            <thead>
+                <tr class="bg-gray-200 text-black font-bold">
+                    <th class="border border-black p-2 text-center w-10">STT</th>
+                    <th class="border border-black p-2">Mã Số Thuế</th>
+                    <th class="border border-black p-2">Tên Doanh Nghiệp</th>
+                    <th class="border border-black p-2">Người Đại Diện</th>
+                    <th class="border border-black p-2">Địa Chỉ Trụ Sở</th>
+                    <th class="border border-black p-2">Loại Hình</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody">
+                <!-- Content for print -->
+            </tbody>
+        </table>
+
+        <div class="mt-8 flex justify-between text-xs px-8">
+            <div class="text-center">
+                <p class="font-bold">NGƯỜI LẬP BÁO CÁO</p>
+                <p class="italic text-gray-500 mt-12">(Ký & ghi rõ họ tên)</p>
+            </div>
+            <div class="text-center">
+                <p class="font-bold">XÁC NHẬN CỦA UBND PHƯỜNG XUÂN PHƯƠNG</p>
+                <p class="italic text-gray-500 mt-12">(Ký tên & Đóng dấu)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        function formatDateVN(dateStr, longFormat = false) {
+            if (!dateStr) return 'Chưa cập nhật';
+            if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                const parts = dateStr.split('T')[0].split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parts[1];
+                    const day = parts[2];
+                    if (longFormat) {
+                        return `ngày ${day} tháng ${month} năm ${year}`;
+                    }
+                    return `${day}/${month}/${year}`;
+                }
+            }
+            if (dateStr instanceof Date) {
+                const day = String(dateStr.getDate()).padStart(2, '0');
+                const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+                const year = dateStr.getFullYear();
+                if (longFormat) {
+                    return `ngày ${day} tháng ${month} năm ${year}`;
+                }
+                return `${day}/${month}/${year}`;
+            }
+            return dateStr;
+        }
+
+        const defaultBusinesses = [
+            {
+                mst: "0108934521",
+                tenDN: "Công ty TNHH Xây dựng & Thương mại Xuân Phương",
+                daiDien: "Nguyen Van Hung",
+                sdt: "0912345678",
+                diaChi: "Số 45 Phố Tu Hoàng, Phường Xuân Phương, TP. Hà Nội",
+                ngayCap: "2019-05-15",
+                loaiHinh: "Công ty TNHH",
+                coQuanThue: "Chi cục Thuế khu vực Nam Từ Liêm",
+                nganhNghe: "Thi công xây dựng hạ tầng kỹ thuật"
+            },
+            {
+                mst: "0109123890",
+                tenDN: "Công ty Cổ phần Thiết bị Điện Viglacera",
+                daiDien: "Tran Thi Mai",
+                sdt: "0988776655",
+                diaChi: "KĐT Viglacera Xuân Phương, Phường Xuân Phương, TP. Hà Nội",
+                ngayCap: "2020-11-20",
+                loaiHinh: "Công ty Cổ phần",
+                coQuanThue: "Chi cục Thuế khu vực Nam Từ Liêm",
+                nganhNghe: "Kinh doanh thiết bị điện & vật liệu xây dựng"
+            },
+            {
+                mst: "0107654321",
+                tenDN: "Doanh nghiệp Tư nhân Xăng dầu Thị Cấm",
+                daiDien: "Lê Văn Nam",
+                sdt: "0904112233",
+                diaChi: "Đường Cầu Diễn, Phố Thị Cấm, Phường Xuân Phương, TP. Hà Nội",
+                ngayCap: "2017-03-10",
+                loaiHinh: "Doanh nghiệp Tư nhân",
+                coQuanThue: "Chi cục Thuế khu vực Nam Từ Liêm",
+                nganhNghe: "Bán lẻ nhiên liệu động cơ"
+            }
+        ];
+
+      // 1. Dán đường link Web App bạn lấy từ Google Apps Script vào đây (thay thế chuỗi bên dưới)
+const GOOGLE_API_URL ="https://script.google.com/macros/s/AKfycbxFYR3MzbyZUViratcNir73VvKRupoGaKvRbkgec_bEwwTVDn3GKKs19wedhAd0hP4W/exec";
+
+let businesses = [];
+let currentFilteredBusinesses = [];
+let selectedMsts = new Set();
+let currentSingleView = null;
+let chartTypeObj = null;
+let chartIndustryObj = null;
+
+// 2. Khởi tạo ứng dụng và tự động tải dữ liệu từ Google Sheets về
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadDataFromGoogleDrive();
+});
+
+// 3. Hàm lấy dữ liệu từ Google Sheet (Drive) về giao diện web
+async function loadDataFromGoogleDrive() {
+    showToast("Đang tải dữ liệu từ Google Drive...", "warning");
+    try {
+        const res = await fetch(GOOGLE_API_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+            businesses = data;
+        } else {
+            businesses = [...defaultBusinesses];
+        }
+    } catch (err) {
+        console.error("Lỗi kết nối Google Drive:", err);
+        businesses = JSON.parse(localStorage.getItem('xp_businesses')) || defaultBusinesses;
+    }
+    applyFilters();
+    updateKPIs();
+    updateCharts();
+}
+
+// 4. Hàm đồng bộ dữ liệu (khi Thêm / Sửa / Xóa) lên Google Sheet
+async function saveToStorage() {
+    // Lưu tạm vào bộ nhớ trình duyệt làm backup
+    localStorage.setItem('xp_businesses', JSON.stringify(businesses));
+    
+    // Gửi dữ liệu mới nhất lên Google Sheets
+    try {
+        await fetch(GOOGLE_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'saveAll', data: businesses })
+        });
+    } catch (err) {
+        console.error("Lỗi gửi dữ liệu lên Google Drive:", err);
+    }
+}
+// =======================================================================
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msgEl = document.getElementById('toastMsg');
+            
+            msgEl.textContent = msg;
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle text-green-400 text-xl';
+            } else if (type === 'warning') {
+                icon.className = 'fas fa-exclamation-triangle text-yellow-400 text-xl';
+            } else {
+                icon.className = 'fas fa-times-circle text-red-400 text-xl';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        function switchTab(tab) {
+            document.getElementById('sec-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+            document.getElementById('sec-list').classList.toggle('hidden', tab !== 'list');
+
+            const tabDash = document.getElementById('tab-dashboard');
+            const tabList = document.getElementById('tab-list');
+
+            if (tab === 'dashboard') {
+                tabDash.className = "py-3 px-5 text-sm font-semibold border-b-4 border-yellow-400 text-white flex items-center gap-2 transition";
+                tabList.className = "py-3 px-5 text-sm font-semibold border-b-4 border-transparent text-gray-300 hover:text-white flex items-center gap-2 transition";
+                updateCharts();
+            } else {
+                tabList.className = "py-3 px-5 text-sm font-semibold border-b-4 border-yellow-400 text-white flex items-center gap-2 transition";
+                tabDash.className = "py-3 px-5 text-sm font-semibold border-b-4 border-transparent text-gray-300 hover:text-white flex items-center gap-2 transition";
+            }
+        }
+
+        function renderTable(data = currentFilteredBusinesses) {
+            const tbody = document.getElementById('businessTableBody');
+            const empty = document.getElementById('emptyMessage');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                empty.classList.remove('hidden');
+                updateMasterCheckboxState();
+                updateBatchDeleteBtn();
+                return;
+            }
+            empty.classList.add('hidden');
+
+            data.forEach((item, index) => {
+                const mapQuery = encodeURIComponent(`${item.diaChi}`);
+                const mapLink = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+                const isChecked = selectedMsts.has(item.mst);
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-red-50/50 transition border-b ${isChecked ? 'bg-red-50' : ''}`;
+                tr.innerHTML = `
+                    <td class="p-3 text-center">
+                        <input type="checkbox" onchange="toggleItemSelect('${item.mst}')" ${isChecked ? 'checked' : ''} class="w-4 h-4 cursor-pointer accent-do-do">
+                    </td>
+                    <td class="p-3 text-center font-medium text-gray-500">${index + 1}</td>
+                    <td class="p-3 font-mono font-bold text-do-do">${item.mst}</td>
+                    <td class="p-3 font-semibold text-gray-900">${item.tenDN}</td>
+                    <td class="p-3">
+                        <a href="${mapLink}" target="_blank" title="Xem vị trí trên Google Maps" class="text-blue-700 hover:text-do-do font-medium hover:underline flex items-center gap-1">
+                            <i class="fas fa-map-marker-alt text-red-600"></i> ${item.diaChi}
+                        </a>
+                    </td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="viewDetail(${index})" title="Xem Chi Tiết 9 Thông Tin" class="p-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg text-xs">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editBusiness(${index})" title="Sửa" class="p-1.5 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-xs">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button onclick="deleteBusiness(${index})" title="Xóa" class="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateMasterCheckboxState();
+            updateBatchDeleteBtn();
+        }
+
+        function toggleSelectAll(master) {
+            currentFilteredBusinesses.forEach(b => {
+                if (master.checked) {
+                    selectedMsts.add(b.mst);
+                } else {
+                    selectedMsts.delete(b.mst);
+                }
+            });
+            renderTable();
+        }
+
+        function toggleItemSelect(mst) {
+            if (selectedMsts.has(mst)) {
+                selectedMsts.delete(mst);
+            } else {
+                selectedMsts.add(mst);
+            }
+            renderTable();
+        }
+
+        function updateMasterCheckboxState() {
+            const master = document.getElementById('selectAllCheckbox');
+            if (!master) return;
+            if (currentFilteredBusinesses.length === 0) {
+                master.checked = false;
+                master.indeterminate = false;
+                return;
+            }
+            const visibleSelectedCount = currentFilteredBusinesses.filter(b => selectedMsts.has(b.mst)).length;
+            master.checked = visibleSelectedCount === currentFilteredBusinesses.length;
+            master.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < currentFilteredBusinesses.length;
+        }
+
+        function updateBatchDeleteBtn() {
+            const btn = document.getElementById('btnBatchDelete');
+            const countEl = document.getElementById('selectedCount');
+            if (!btn || !countEl) return;
+            
+            const count = selectedMsts.size;
+            countEl.textContent = count;
+            if (count > 0) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        function deleteSelectedBusinesses() {
+            const count = selectedMsts.size;
+            if (count === 0) return;
+
+            if (confirm(`Bạn có chắc chắn muốn xóa ${count} doanh nghiệp đã chọn khỏi hệ thống không?`)) {
+                businesses = businesses.filter(b => !selectedMsts.has(b.mst));
+                selectedMsts.clear();
+                saveToStorage();
+                applyFilters();
+                updateKPIs();
+                updateCharts();
+                showToast(`Đã xóa thành công ${count} doanh nghiệp khỏi hệ thống!`, 'warning');
+            }
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const type = document.getElementById('filterType').value;
+
+            currentFilteredBusinesses = businesses.filter(b => {
+                const matchSearch = b.tenDN.toLowerCase().includes(search) ||
+                                    b.mst.toLowerCase().includes(search) ||
+                                    b.daiDien.toLowerCase().includes(search) ||
+                                    b.diaChi.toLowerCase().includes(search);
+                const matchType = type === "" || b.loaiHinh === type;
+                return matchSearch && matchType;
+            });
+
+            renderTable(currentFilteredBusinesses);
+        }
+
+        async function lookupMSTGoogle() {
+            const mstVal = document.getElementById('mst').value.trim();
+            if (!mstVal) {
+                showToast("Vui lòng nhập Mã số thuế trước khi tra cứu!", "warning");
+                return;
+            }
+
+            showToast("Đang kết nối hệ thống dữ liệu thuế online...", "warning");
+
+            try {
+                const res = await fetch(`https://api.vietqr.io/v2/businesses/${mstVal}`);
+                const data = await res.json();
+
+                if (data.code === "00" && data.data) {
+                    const info = data.data;
+                    document.getElementById('tenDN').value = info.name || "";
+                    document.getElementById('diaChi').value = info.address || "Phường Xuân Phương, TP. Hà Nội";
+                    
+                    if (info.name && info.name.toLowerCase().includes("cổ phần")) {
+                        document.getElementById('loaiHinh').value = "Công ty Cổ phần";
+                    } else if (info.name && info.name.toLowerCase().includes("tư nhân")) {
+                        document.getElementById('loaiHinh').value = "Doanh nghiệp Tư nhân";
+                    } else {
+                        document.getElementById('loaiHinh').value = "Công ty TNHH";
+                    }
+
+                    showToast("Đã tra cứu & tự động điền dữ liệu online thành công!", "success");
+                } else {
+                    showToast("Không tìm thấy dữ liệu trực tuyến. Bạn có thể bấm 'Mở Google.com' để đối chiếu!", "warning");
+                }
+            } catch (err) {
+                showToast("Không thể kết nối API tự động. Vui lòng bấm 'Mở Google.com'!", "danger");
+            }
+        }
+
+        function openGoogleSearch() {
+            const mstVal = document.getElementById('mst').value.trim();
+            const query = mstVal ? `mã số thuế ${mstVal}` : "tra cứu mã số thuế doanh nghiệp";
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        }
+
+        function openModal(editIdx = -1) {
+            document.getElementById('businessForm').reset();
+            document.getElementById('editIndex').value = editIdx;
+            
+            if (editIdx >= 0) {
+                const item = businesses[editIdx];
+                document.getElementById('modalTitle').textContent = "Chỉnh Sửa Hồ Sơ Doanh Nghiệp";
+                document.getElementById('mst').value = item.mst;
+                document.getElementById('tenDN').value = item.tenDN;
+                document.getElementById('daiDien').value = item.daiDien;
+                document.getElementById('sdt').value = item.sdt;
+                document.getElementById('loaiHinh').value = item.loaiHinh;
+                document.getElementById('ngayCap').value = item.ngayCap;
+                document.getElementById('coQuanThue').value = item.coQuanThue;
+                document.getElementById('diaChi').value = item.diaChi;
+                document.getElementById('nganhNghe').value = item.nganhNghe;
+            } else {
+                document.getElementById('modalTitle').textContent = "Thêm Doanh Nghiệp Mới";
+            }
+            
+            document.getElementById('formModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('formModal').classList.add('hidden');
+        }
+
+        function saveBusiness(e) {
+            e.preventDefault();
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+
+            const newItem = {
+                mst: document.getElementById('mst').value.trim(),
+                tenDN: document.getElementById('tenDN').value.trim(),
+                daiDien: document.getElementById('daiDien').value.trim(),
+                sdt: document.getElementById('sdt').value.trim(),
+                loaiHinh: document.getElementById('loaiHinh').value,
+                ngayCap: document.getElementById('ngayCap').value,
+                coQuanThue: document.getElementById('coQuanThue').value.trim(),
+                diaChi: document.getElementById('diaChi').value.trim(),
+                nganhNghe: document.getElementById('nganhNghe').value.trim()
+            };
+
+            if (editIdx >= 0) {
+                businesses[editIdx] = newItem;
+                showToast("Cập nhật thông tin doanh nghiệp thành công!");
+            } else {
+                businesses.unshift(newItem);
+                showToast("Thêm mới doanh nghiệp thành công!");
+            }
+
+            saveToStorage();
+            applyFilters();
+            updateKPIs();
+            updateCharts();
+            closeModal();
+        }
+
+        function viewDetail(index) {
+            const item = currentFilteredBusinesses[index];
+            currentSingleView = item;
+            const detailBox = document.getElementById('detailContent');
+
+            detailBox.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">1. Mã số thuế:</strong> <span class="font-mono font-bold">${item.mst}</span></div>
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">2. Người đại diện PL:</strong> ${item.daiDien}</div>
+                    <div class="bg-gray-50 p-3 rounded border md:col-span-2"><strong class="text-do-do">3. Tên doanh nghiệp:</strong> <span class="font-bold text-gray-900">${item.tenDN}</span></div>
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">4. Số điện thoại:</strong> ${item.sdt || 'Chưa cập nhật'}</div>
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">5. Loại hình DN:</strong> ${item.loaiHinh}</div>
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">6. Ngày cấp/Hoạt động:</strong> <span class="font-bold text-do-do">${formatDateVN(item.ngayCap, true)} (${formatDateVN(item.ngayCap, false)})</span></div>
+                    <div class="bg-gray-50 p-3 rounded border"><strong class="text-do-do">7. Cơ quan QL thuế:</strong> ${item.coQuanThue}</div>
+                    <div class="bg-gray-50 p-3 rounded border md:col-span-2"><strong class="text-do-do">8. Địa chỉ trụ sở:</strong> ${item.diaChi}</div>
+                    <div class="bg-gray-50 p-3 rounded border md:col-span-2"><strong class="text-do-do">9. Ngành nghề chính:</strong> ${item.nganhNghe || 'Chưa cập nhật'}</div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function editBusiness(index) {
+            const actualIndex = businesses.indexOf(currentFilteredBusinesses[index]);
+            openModal(actualIndex);
+        }
+
+        function deleteBusiness(index) {
+            if (confirm("Bạn có chắc chắn muốn xóa hồ sơ doanh nghiệp này không?")) {
+                const actualIndex = businesses.indexOf(currentFilteredBusinesses[index]);
+                const item = businesses[actualIndex];
+                selectedMsts.delete(item.mst);
+                businesses.splice(actualIndex, 1);
+                saveToStorage();
+                applyFilters();
+                updateKPIs();
+                updateCharts();
+                showToast("Đã xóa doanh nghiệp khỏi hệ thống!", "warning");
+            }
+        }
+
+        function exportToExcel() {
+            if (currentFilteredBusinesses.length === 0) {
+                showToast("Danh sách hiển thị rỗng, không thể xuất Excel!", "warning");
+                return;
+            }
+
+            const exportData = currentFilteredBusinesses.map((item, i) => ({
+                "STT": i + 1,
+                "Mã số thuế": item.mst,
+                "Tên doanh nghiệp": item.tenDN,
+                "Người đại diện PL": item.daiDien,
+                "Số điện thoại": item.sdt,
+                "Địa chỉ trụ sở": item.diaChi,
+                "Ngày cấp/Hoạt động": formatDateVN(item.ngayCap, false),
+                "Loại hình doanh nghiệp": item.loaiHinh,
+                "Cơ quan quản lý thuế": item.coQuanThue,
+                "Ngành nghề chính": item.nganhNghe
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DoanhNghiep_XuanPhuong");
+            XLSX.writeFile(wb, "Danh_Sach_Doanh_Nghiep_Phuong_Xuan_Phuong.xlsx");
+            showToast("Xuất dữ liệu file Excel thành công!");
+        }
+
+        function downloadExcelTemplate() {
+            const template = [{
+                "Mã số thuế": "0101234567",
+                "Tên doanh nghiệp": "Công ty TNHH Mẫu Xuân Phương",
+                "Người đại diện PL": "Nguyen Van A",
+                "Số điện thoại": "0912345678",
+                "Địa chỉ trụ sở": "Phố Tu Hoàng, Phường Xuân Phương, TP. Hà Nội",
+                "Ngày cấp/Hoạt động": "01/01/2023",
+                "Loại hình doanh nghiệp": "Công ty TNHH",
+                "Cơ quan quản lý thuế": "Chi cục Thuế khu vực Nam Từ Liêm",
+                "Ngành nghề chính": "Xây dựng"
+            }];
+            const ws = XLSX.utils.json_to_sheet(template);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_Lieu");
+            XLSX.writeFile(wb, "File_Mau_Doanh_Nghiep.xlsx");
+        }
+
+        function importFromExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+                    let addedCount = 0;
+                    json.forEach(row => {
+                        const mst = row["Mã số thuế"] || row["MST"] || "";
+                        if (mst) {
+                            let rawDate = row["Ngày cấp/Hoạt động"] || row["Ngày cấp"] || "";
+                            if (typeof rawDate === 'string' && rawDate.includes('/')) {
+                                const dParts = rawDate.split('/');
+                                if (dParts.length === 3) {
+                                    rawDate = `${dParts[2]}-${dParts[1].padStart(2,'0')}-${dParts[0].padStart(2,'0')}`;
+                                }
+                            }
+                            businesses.unshift({
+                                mst: String(mst).trim(),
+                                tenDN: row["Tên doanh nghiệp"] || row["Tên DN"] || "Chưa cập nhật",
+                                daiDien: row["Người đại diện PL"] || row["Người đại diện"] || "Chưa cập nhật",
+                                sdt: row["Số điện thoại"] || row["SDT"] || "",
+                                diaChi: row["Địa chỉ trụ sở"] || row["Địa chỉ"] || "Phường Xuân Phương, TP. Hà Nội",
+                                ngayCap: rawDate,
+                                loaiHinh: row["Loại hình doanh nghiệp"] || "Công ty TNHH",
+                                coQuanThue: row["Cơ quan quản lý thuế"] || "Chi cục Thuế khu vực Nam Từ Liêm",
+                                nganhNghe: row["Ngành nghề chính"] || "Khác"
+                            });
+                            addedCount++;
+                        }
+                    });
+
+                    saveToStorage();
+                    applyFilters();
+                    updateKPIs();
+                    updateCharts();
+                    showToast(`Đã nhập thành công ${addedCount} doanh nghiệp từ Excel!`);
+                } catch (err) {
+                    showToast("Lỗi đọc file Excel. Vui lòng kiểm tra định dạng file!", "danger");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function printFilteredList() {
+            if (currentFilteredBusinesses.length === 0) {
+                showToast("Không có dữ liệu hiển thị để in!", "warning");
+                return;
+            }
+
+            document.getElementById('printTitle').textContent = "BÁO CÁO DANH SÁCH DOANH NGHIỆP QUẢN LÝ";
+            document.getElementById('printDate').textContent = formatDateVN(new Date(), true);
+
+            const tbody = document.getElementById('printTableBody');
+            tbody.innerHTML = '';
+            currentFilteredBusinesses.forEach((item, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="border border-black p-2 text-center">${i + 1}</td>
+                    <td class="border border-black p-2 font-mono font-bold">${item.mst}</td>
+                    <td class="border border-black p-2 font-bold">${item.tenDN}</td>
+                    <td class="border border-black p-2">${item.daiDien}</td>
+                    <td class="border border-black p-2">${item.diaChi}</td>
+                    <td class="border border-black p-2">${item.loaiHinh}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('printArea').classList.remove('hidden');
+            window.print();
+            document.getElementById('printArea').classList.add('hidden');
+        }
+
+        function printSingleBusiness() {
+            if (!currentSingleView) return;
+            const item = currentSingleView;
+            
+            document.getElementById('printTitle').textContent = `HỒ SƠ DOANH NGHIỆP: ${item.tenDN.toUpperCase()}`;
+            document.getElementById('printDate').textContent = formatDateVN(new Date(), true);
+
+            const tbody = document.getElementById('printTableBody');
+            tbody.innerHTML = `
+                <tr><td class="border border-black p-2 font-bold">Mã Số Thuế</td><td class="border border-black p-2 font-mono font-bold" colspan="5">${item.mst}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Người Đại Diện</td><td class="border border-black p-2" colspan="5">${item.daiDien}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Địa Chỉ Trụ Sở</td><td class="border border-black p-2" colspan="5">${item.diaChi}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Số Điện Thoại</td><td class="border border-black p-2" colspan="5">${item.sdt || 'N/A'}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Loại Hình DN</td><td class="border border-black p-2" colspan="5">${item.loaiHinh}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Ngày Cấp/Hoạt Động</td><td class="border border-black p-2" colspan="5">${formatDateVN(item.ngayCap, true)} (${formatDateVN(item.ngayCap, false)})</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Cơ Quan QL Thuế</td><td class="border border-black p-2" colspan="5">${item.coQuanThue}</td></tr>
+                <tr><td class="border border-black p-2 font-bold">Ngành Nghề Chính</td><td class="border border-black p-2" colspan="5">${item.nganhNghe || 'N/A'}</td></tr>
+            `;
+
+            document.getElementById('printArea').classList.remove('hidden');
+            window.print();
+            document.getElementById('printArea').classList.add('hidden');
+        }
+
+        function updateKPIs() {
+            document.getElementById('kpiTotal').textContent = businesses.length;
+            document.getElementById('kpiActive').textContent = businesses.length;
+        }
+
+        function initCharts() {
+            const ctxType = document.getElementById('chartType').getContext('2d');
+            chartTypeObj = new Chart(ctxType, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Công ty TNHH', 'Công ty Cổ phần', 'Doanh nghiệp Tư nhân', 'Hợp tác xã'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#800020', '#D4AF37', '#2563eb', '#059669']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctxInd = document.getElementById('chartIndustry').getContext('2d');
+            chartIndustryObj = new Chart(ctxInd, {
+                type: 'bar',
+                data: {
+                    labels: ['Xây dựng', 'Thương mại', 'Vật liệu', 'Nhiên liệu', 'Khác'],
+                    datasets: [{
+                        label: 'Số lượng DN',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#800020'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            updateCharts();
+        }
+
+        function updateCharts() {
+            if (!chartTypeObj || !chartIndustryObj) return;
+
+            const types = {'Công ty TNHH': 0, 'Công ty Cổ phần': 0, 'Doanh nghiệp Tư nhân': 0, 'Hợp tác xã': 0};
+            businesses.forEach(b => {
+                if (types[b.loaiHinh] !== undefined) types[b.loaiHinh]++;
+                else types['Công ty TNHH']++;
+            });
+            chartTypeObj.data.datasets[0].data = Object.values(types);
+            chartTypeObj.update();
+
+            const inds = {'Xây dựng': 0, 'Thương mại': 0, 'Vật liệu': 0, 'Nhiên liệu': 0, 'Khác': 0};
+            businesses.forEach(b => {
+                const nn = (b.nganhNghe || '').toLowerCase();
+                if (nn.includes('xây dựng')) inds['Xây dựng']++;
+                else if (nn.includes('thương mại')) inds['Thương mại']++;
+                else if (nn.includes('vật liệu') || nn.includes('điện')) inds['Vật liệu']++;
+                else if (nn.includes('xăng') || nn.includes('nhiên liệu')) inds['Nhiên liệu']++;
+                else inds['Khác']++;
+            });
+            chartIndustryObj.data.datasets[0].data = Object.values(inds);
+            chartIndustryObj.update();
+        }
+    </script>
+</body>
+</html>
